@@ -1,0 +1,6 @@
+[
+  {"label": "Total Regions", "value": 18, "trend": "+12%", "icon": "FiMap"},
+  {"label": "Total Therapies", "value": 26, "trend": "+18%", "icon": "FiCpu"},
+  {"label": "Total Presences", "value": 14, "trend": "+8%", "icon": "FiLayers"},
+  {"label": "Total Users", "value": 74, "trend": "+22%", "icon": "FiUsers"}
+]

@@ -1,0 +1,6 @@
+[
+  {"id": "u1", "name": "Maya Patel", "email": "maya.patel@pcdpharma.com", "role": "Admin", "status": "Active", "lastLogin": "2026-06-18"},
+  {"id": "u2", "name": "Carlos Vega", "email": "carlos.vega@pcdpharma.com", "role": "Manager", "status": "Active", "lastLogin": "2026-06-17"},
+  {"id": "u3", "name": "Sara Nair", "email": "sara.nair@pcdpharma.com", "role": "Supervisor", "status": "Pending", "lastLogin": "2026-06-14"},
+  {"id": "u4", "name": "Nina Brooks", "email": "nina.brooks@pcdpharma.com", "role": "Editor", "status": "Offline", "lastLogin": "2026-06-10"}
+]

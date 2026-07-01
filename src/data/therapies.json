@@ -1,0 +1,90 @@
+[
+  {
+    "id": "t1",
+    "therapy": "Antibiotics & Anti-Infectives",
+    "description": "Anti bacterial & anti-infective drugs used to treat various infections caused by bacteria.",
+    "slug": "antibiotics",
+    "shortName": "Antibiotics",
+    "usedIn": "20 Presences",
+    "presences": 20,
+    "icon": "Shield",
+    "status": "Active"
+  },
+  {
+    "id": "t2",
+    "therapy": "Gastro",
+    "description": "Gastrointestinal health & treatment",
+    "slug": "gastro",
+    "shortName": "Gastro",
+    "usedIn": "18 Presences",
+    "presences": 18,
+    "icon": "Activity",
+    "status": "Active"
+  },
+  {
+    "id": "t3",
+    "therapy": "Cardiac / Diabetic",
+    "description": "Cardiovascular & diabetic care",
+    "slug": "cardiac-diabetic",
+    "shortName": "Cardiac",
+    "usedIn": "14 Presences",
+    "presences": 14,
+    "icon": "Heart",
+    "status": "Active"
+  },
+  {
+    "id": "t4",
+    "therapy": "Respiratory",
+    "description": "Respiratory & breathing disorders",
+    "slug": "respiratory",
+    "shortName": "Respiratory",
+    "usedIn": "16 Presences",
+    "presences": 16,
+    "icon": "Wind",
+    "status": "Active"
+  },
+  {
+    "id": "t5",
+    "therapy": "Orthopedic",
+    "description": "Bone, joint & muscle care",
+    "slug": "orthopedic",
+    "shortName": "Orthopedic",
+    "usedIn": "15 Presences",
+    "presences": 15,
+    "icon": "Layers",
+    "status": "Active"
+  },
+  {
+    "id": "t6",
+    "therapy": "Pediatric",
+    "description": "Child healthcare & nutrition",
+    "slug": "pediatric",
+    "shortName": "Pediatric",
+    "usedIn": "12 Presences",
+    "presences": 12,
+    "icon": "Smile",
+    "status": "Active"
+  },
+  {
+    "id": "t7",
+    "therapy": "Multivitamins",
+    "description": "Vitamins & nutritional supplements",
+    "slug": "multivitamins",
+    "shortName": "Multivitamins",
+    "usedIn": "19 Presences",
+    "presences": 19,
+    "icon": "Cpu",
+    "status": "Active"
+  },
+  {
+    "id": "t8",
+    "therapy": "Dermatology",
+    "description": "Skin & dermatological care",
+    "slug": "dermatology",
+    "shortName": "Dermatology",
+    "usedIn": "9 Presences",
+    "presences": 9,
+    "icon": "Sun",
+    "status": "Active"
+  }
+]

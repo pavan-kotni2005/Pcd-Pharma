@@ -1,0 +1,6 @@
+[
+  {"id": "c1", "category": "Cardio", "description": "Therapies focused on cardiac care.", "status": "Active", "created": "2026-04-03"},
+  {"id": "c2", "category": "Respiratory", "description": "Pulmonary treatments and inhalers.", "status": "Active", "created": "2026-04-11"},
+  {"id": "c3", "category": "Neurology", "description": "Nervous system support products.", "status": "Pending", "created": "2026-04-20"},
+  {"id": "c4", "category": "Dermatology", "description": "Skin and dermatology specialty lines.", "status": "Offline", "created": "2026-05-01"}
+]

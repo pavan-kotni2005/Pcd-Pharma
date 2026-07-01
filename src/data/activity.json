@@ -1,0 +1,6 @@
+[
+  {"id": "a1", "user": "Maya Patel", "action": "Edited therapy plan", "module": "Therapies", "time": "2m ago", "ip": "192.168.1.98", "status": "Success"},
+  {"id": "a2", "user": "Carlos Vega", "action": "Added new region", "module": "Regions", "time": "10m ago", "ip": "192.168.1.105", "status": "Success"},
+  {"id": "a3", "user": "Sara Nair", "action": "Updated presence slots", "module": "Presences", "time": "1h ago", "ip": "192.168.1.17", "status": "Pending"},
+  {"id": "a4", "user": "Nina Brooks", "action": "Deleted category entry", "module": "Categories", "time": "3h ago", "ip": "192.168.1.27", "status": "Failed"}
+]
