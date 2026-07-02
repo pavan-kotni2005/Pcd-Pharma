@@ -103,13 +103,22 @@ const Sidebar = () => {
         <div className="shrink-0 mb-6">
           <div className="flex items-center justify-between">
             <div className={`flex items-center gap-3 overflow-hidden ${sidebarOpen ? 'w-full' : 'w-10 justify-center'}`}>
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#3B5BFF] to-[#5E4BFF] text-white shadow-lg font-bold text-lg select-none">
-                P
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#3B5BFF]/10 to-[#5E4BFF]/5 border border-white/10 text-white shadow-lg select-none">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="transform rotate-[315deg]">
+                  <rect x="5" y="8" width="14" height="8" rx="4" fill="url(#sidebar-pill-grad)" />
+                  <path d="M12 8V16" stroke="#050B1A" strokeWidth="1.5" />
+                  <defs>
+                    <linearGradient id="sidebar-pill-grad" x1="5" y1="8" x2="19" y2="16" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#3B5BFF" />
+                      <stop offset="1" stopColor="#06B6D4" />
+                    </linearGradient>
+                  </defs>
+                </svg>
               </div>
               {sidebarOpen && (
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-white tracking-tight">PCD Pharma</p>
-                  <p className="text-[10px] uppercase tracking-wider text-textSecondary font-semibold">Admin Panel</p>
+                  <p className="text-[10px] uppercase tracking-wider text-textSecondary font-semibold">Admin Dashboard</p>
                 </div>
               )}
             </div>
@@ -149,6 +158,8 @@ const Sidebar = () => {
             {renderNavList(settingsMenuItems)}
           </div>
         </div>
+
+
 
 
       </motion.aside>

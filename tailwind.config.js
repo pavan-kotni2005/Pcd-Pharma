@@ -8,7 +8,7 @@ module.exports = {
         surface: '#0B1228',
         sidebar: '#081120',
         page: '#050B1A',
-        border: 'rgba(255,255,255,0.08)',
+        border: 'rgba(255,255,255,0.02)',
         textSecondary: '#A0A9C0'
       },
       boxShadow: {

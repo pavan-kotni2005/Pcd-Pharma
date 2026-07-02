@@ -10,7 +10,8 @@ const Header = () => {
     setProfileOpen,
     sidebarOpen,
     setSidebarOpen,
-    showToast
+    showToast,
+    logout
   } = useAppContext();
 
   const dropdownRef = useRef(null);
@@ -28,15 +29,20 @@ const Header = () => {
 
   const handleDropdownOption = (option) => {
     setProfileOpen(false);
-    showToast(`${option} Triggered`, `Simulated navigation to admin ${option.toLowerCase()}.`);
+    if (option === 'Sign Out') {
+      logout();
+      showToast('Logged Out', 'You have been logged out successfully.');
+    } else {
+      showToast(`${option} Triggered`, `Simulated navigation to admin ${option.toLowerCase()}.`);
+    }
   };
 
   const getHeaderContent = () => {
     switch (activePage) {
       case 'Dashboard':
         return {
-          title: 'Dashboard Overview',
-          subtitle: 'Workspace overview, statistics, and live operations'
+          title: 'Welcome back, Admin! 👋',
+          subtitle: "Here's what's happening with your network today."
         };
       case 'Regions':
         return {
@@ -84,7 +90,7 @@ const Header = () => {
   const headerContent = getHeaderContent();
 
   return (
-    <div className="flex flex-col gap-3 px-6 pt-3.5 pb-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 px-6 pt-1.5 pb-1 sm:flex-row sm:items-center sm:justify-between">
       {/* Title block with hamburger trigger */}
       <div className="flex items-center gap-3">
         <button
@@ -110,27 +116,49 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Right panel: Search and profile */}
-      <div className="flex items-center gap-4">
-        {/* Search */}
-        <div className="relative hidden items-center rounded-2xl border border-white/8 bg-white/5 px-4 py-2.5 text-xs text-textSecondary shadow-soft focus-within:border-white/15 focus-within:bg-white/[0.08] md:flex w-60 transition-all">
-          <FiSearch className="mr-2 text-sm shrink-0" />
-          <input
-            type="search"
-            placeholder="Quick search..."
-            className="w-full bg-transparent text-white outline-none placeholder:text-textSecondary"
-          />
-        </div>
+      {/* Right panel: Search, widgets, and profile */}
+      <div className="flex items-center gap-3.5">
+        {/* Render Datepicker and Notification bell only on Dashboard */}
+        {activePage === 'Dashboard' ? (
+          <>
+            {/* Date range picker dropdown */}
+            <div className="relative hidden sm:flex items-center gap-2 rounded-xl border border-white/8 bg-[#091024]/50 px-3.5 py-2 text-xs text-textSecondary cursor-pointer hover:bg-white/[0.08] hover:border-white/12 transition-all">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-textSecondary"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <span className="font-semibold text-white/90">20 May 2024 - 26 May 2024</span>
+              <FiChevronDown className="text-textSecondary shrink-0" size={13} />
+            </div>
+
+            {/* Notification bell */}
+            <button className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-textSecondary transition hover:bg-white/10 hover:text-white border border-white/5">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[8.5px] font-bold text-white shadow-[0_0_8px_rgba(244,63,94,0.4)] border border-[#050B1A]">
+                5
+              </span>
+            </button>
+          </>
+        ) : (
+          /* Search box for other pages */
+          <div className="relative hidden items-center rounded-2xl border border-white/8 bg-white/5 px-4 py-2.5 text-xs text-textSecondary shadow-soft focus-within:border-white/15 focus-within:bg-white/[0.08] md:flex w-60 transition-all">
+            <FiSearch className="mr-2 text-sm shrink-0" />
+            <input
+              type="search"
+              placeholder="Quick search..."
+              className="w-full bg-transparent text-white outline-none placeholder:text-textSecondary"
+            />
+          </div>
+        )}
 
         {/* Profile */}
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setProfileOpen(!profileOpen)}
-            className="flex items-center gap-2 rounded-2xl border border-white/[0.04] bg-white/5 px-3.5 text-left transition hover:border-white/15 hover:bg-white/[0.06] h-[38px]"
+            className="flex items-center gap-2.5 rounded-2xl border border-white/[0.04] bg-white/5 p-1 pr-3.5 text-left transition hover:border-white/15 hover:bg-white/[0.06] h-[40px] shadow-sm"
           >
-            <div className="hidden min-w-0 sm:block">
-              <p className="text-[11.5px] font-bold text-white leading-none">Admin User</p>
+            <img src="/admin_avatar.png" alt="Admin Avatar" className="h-8 w-8 rounded-xl object-cover border border-white/10" />
+            <div className="hidden min-w-0 sm:block leading-none">
+              <p className="text-[11.5px] font-bold text-white">Admin User</p>
+              <p className="text-[9px] text-[#8DA0D1]/60 font-semibold mt-1">Super Admin</p>
             </div>
             <FiChevronDown className="text-textSecondary shrink-0 transition-transform duration-200" style={{ transform: profileOpen ? 'rotate(180deg)' : 'rotate(0)' }} size={13} />
           </button>

@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
+import { AppProvider, useAppContext } from './context/AppContext';
 import AdminLayout from './layouts/AdminLayout';
 import DashboardPage from './pages/Dashboard';
 import RegionsPage from './pages/Regions';
@@ -9,13 +9,27 @@ import CategoriesPage from './pages/Categories';
 import UsersPage from './pages/Users';
 import ActivityLogPage from './pages/ActivityLog';
 import SettingsPage from './pages/Settings';
+import LoginPage from './pages/Login';
+
+const ProtectedRoute = ({ children }) => {
+  const { isLoggedIn } = useAppContext();
+  return isLoggedIn ? children : <Navigate to="/login" replace />;
+};
 
 function App() {
   return (
     <BrowserRouter>
       <AppProvider>
         <Routes>
-          <Route path="/" element={<AdminLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<DashboardPage />} />
             <Route path="regions" element={<RegionsPage />} />
             <Route path="therapies" element={<TherapiesPage />} />

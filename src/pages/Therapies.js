@@ -80,7 +80,9 @@ const Therapies = () => {
     showToast,
     logActivity,
     therapies,
-    setTherapies
+    addTherapy,
+    editTherapy,
+    removeTherapy
   } = useAppContext();
 
   const navigate = useNavigate();
@@ -172,7 +174,7 @@ const Therapies = () => {
   };
 
   // Perform Save
-  const handleSave = () => {
+  const handleSave = async () => {
     const newErrors = {};
     if (!formData.therapy.trim()) newErrors.therapy = 'Name is required.';
     if (!formData.shortName.trim()) newErrors.shortName = 'Short Name is required.';
@@ -185,21 +187,23 @@ const Therapies = () => {
     }
 
     if (selectedTherapy) {
-      setTherapies((prev) =>
-        prev.map((t) => (t.id === selectedTherapy.id ? { ...t, ...formData, usedIn: `${formData.presences} Presences` } : t))
-      );
-      showToast('Therapy Updated', `${formData.therapy} changes have been saved.`);
-      logActivity(`Updated therapy ${formData.therapy}`, 'Therapies');
+      const ok = await editTherapy(selectedTherapy.id, formData);
+      if (ok) {
+        showToast('Therapy Updated', `${formData.therapy} changes have been saved.`);
+        logActivity(`Updated therapy ${formData.therapy}`, 'Therapies');
+      } else {
+        showToast('Error', 'Failed to update therapy.', 'failed');
+        return;
+      }
     } else {
-      const newId = `t${therapies.length + 1}`;
-      const newTherapy = {
-        ...formData,
-        id: newId,
-        usedIn: `${formData.presences} Presences`
-      };
-      setTherapies((prev) => [...prev, newTherapy]);
-      showToast('Therapy Added', `${formData.therapy} has been created.`);
-      logActivity(`Created therapy ${formData.therapy}`, 'Therapies');
+      const ok = await addTherapy(formData);
+      if (ok) {
+        showToast('Therapy Added', `${formData.therapy} has been created.`);
+        logActivity(`Created therapy ${formData.therapy}`, 'Therapies');
+      } else {
+        showToast('Error', 'Failed to create therapy. Name or slug may already exist.', 'failed');
+        return;
+      }
     }
 
     setEditorOpen(false);
@@ -212,11 +216,15 @@ const Therapies = () => {
     setDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!therapyToDelete) return;
-    setTherapies((prev) => prev.filter((t) => t.id !== therapyToDelete.id));
-    showToast('Therapy Deleted', `${therapyToDelete.therapy} has been removed.`);
-    logActivity(`Deleted therapy ${therapyToDelete.therapy}`, 'Therapies', 'Success');
+    const ok = await removeTherapy(therapyToDelete.id);
+    if (ok) {
+      showToast('Therapy Deleted', `${therapyToDelete.therapy} has been removed.`);
+      logActivity(`Deleted therapy ${therapyToDelete.therapy}`, 'Therapies');
+    } else {
+      showToast('Error', 'Failed to delete therapy.', 'failed');
+    }
     setDeleteModalOpen(false);
     setTherapyToDelete(null);
   };
@@ -420,7 +428,7 @@ const Therapies = () => {
             </div>
 
             {/* Inputs (Optimized heights, no scrollbar) */}
-            <div className="space-y-1 flex-1 min-h-0 pr-1 overflow-hidden">
+            <div className="space-y-3 sm:space-y-3.5 flex-1 min-h-0 pr-1 overflow-y-auto scrollbar-thin">
               {/* Presets Grid - Single row layout */}
               <div>
                 <label className="mb-1 block text-xs font-semibold text-textSecondary">Icon</label>

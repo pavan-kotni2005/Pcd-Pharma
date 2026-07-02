@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import React from 'react';
 
-const Table = ({ columns, data, actions, dense }) => {
+const Table = ({ columns, data, actions, dense, cellPadding }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -15,13 +15,13 @@ const Table = ({ columns, data, actions, dense }) => {
               {columns.map((column) => (
                 <th
                   key={column.accessor}
-                  className={`border-b border-white/[0.04] px-6 py-4 font-semibold uppercase tracking-[0.14em] text-[11px] text-textSecondary ${column.width || ''}`}
+                  className={`border-b border-white/[0.04] ${cellPadding || 'px-6 py-4'} font-semibold uppercase tracking-[0.14em] text-[11px] text-textSecondary ${column.width || ''}`}
                 >
                   {column.header}
                 </th>
               ))}
               {actions && (
-                <th className="border-b border-white/[0.04] px-6 py-4 font-semibold uppercase tracking-[0.14em] text-[11px] text-textSecondary text-right w-2/12">
+                <th className={`border-b border-white/[0.04] ${cellPadding || 'px-6 py-4'} font-semibold uppercase tracking-[0.14em] text-[11px] text-textSecondary text-right w-2/12`}>
                   Actions
                 </th>
               )}
@@ -43,13 +43,13 @@ const Table = ({ columns, data, actions, dense }) => {
                 {columns.map((column) => (
                   <td
                     key={column.accessor}
-                    className={`px-6 ${dense ? 'py-3' : 'py-[22px]'} align-middle text-[13px] text-white/90 ${column.width || ''}`}
+                    className={`${cellPadding || `px-6 ${dense ? 'py-3' : 'py-[22px]'}`} align-middle text-[13px] text-white/90 ${column.width || ''}`}
                   >
                     {column.cell ? column.cell(row) : row[column.accessor]}
                   </td>
                 ))}
                 {actions && (
-                  <td className={`px-6 ${dense ? 'py-3' : 'py-[22px]'} align-middle text-right w-2/12`}>
+                  <td className={`${cellPadding || `px-6 ${dense ? 'py-3' : 'py-[22px]'}`} align-middle text-right w-2/12`}>
                     {actions(row)}
                   </td>
                 )}

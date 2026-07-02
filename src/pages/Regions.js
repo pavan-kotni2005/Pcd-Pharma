@@ -13,7 +13,7 @@ import { useAppContext } from '../context/AppContext';
 const tabs = ['Regions', 'Therapies', 'Presences'];
 
 const Regions = () => {
-  const { setActivePage, regions, setRegions, showToast, logActivity } = useAppContext();
+  const { setActivePage, regions, setRegions, showToast, logActivity, addRegion, editRegion, removeRegion } = useAppContext();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Regions');
   const [editorOpen, setEditorOpen] = useState(false); // Closed by default
@@ -129,18 +129,28 @@ const Regions = () => {
 
     const payload = {
       ...formData,
+      statesList: formData.statesList || [],
       statesCount: (formData.statesList || []).length
     };
 
     if (selectedRegion) {
-      setRegions((prev) => prev.map((item) => (item.id === selectedRegion.id ? { ...item, ...payload } : item)));
-      showToast('Region Updated', `${formData.name} was updated successfully.`);
-      logActivity(`Updated region ${formData.name}`, 'Regions');
+      editRegion(selectedRegion.id, payload).then(success => {
+        if (success) {
+          showToast('Region Updated', `${formData.name} was updated successfully.`);
+          logActivity(`Updated region ${formData.name}`, 'Regions');
+        } else {
+          showToast('Error', 'Failed to update region.', 'failed');
+        }
+      });
     } else {
-      const newRegion = { ...payload, id: `r${regions.length + 1}` };
-      setRegions((prev) => [newRegion, ...prev]);
-      showToast('Region Added', `${formData.name} has been added.`);
-      logActivity(`Created region ${formData.name}`, 'Regions');
+      addRegion(payload).then(success => {
+        if (success) {
+          showToast('Region Added', `${formData.name} has been added.`);
+          logActivity(`Created region ${formData.name}`, 'Regions');
+        } else {
+          showToast('Error', 'Failed to add region.', 'failed');
+        }
+      });
     }
 
     setEditorOpen(false);
@@ -154,11 +164,16 @@ const Regions = () => {
 
   const handleConfirmDelete = () => {
     if (!regionToDelete) return;
-    setRegions((prev) => prev.filter((item) => item.id !== regionToDelete.id));
-    showToast('Region Removed', `${regionToDelete.name} was deleted successfully.`);
-    logActivity(`Deleted region ${regionToDelete.name}`, 'Regions', 'Success');
-    setDeleteModalOpen(false);
-    setRegionToDelete(null);
+    removeRegion(regionToDelete.id).then(success => {
+      if (success) {
+        showToast('Region Removed', `${regionToDelete.name} was deleted successfully.`);
+        logActivity(`Deleted region ${regionToDelete.name}`, 'Regions', 'Success');
+      } else {
+        showToast('Error', 'Failed to delete region.', 'failed');
+      }
+      setDeleteModalOpen(false);
+      setRegionToDelete(null);
+    });
   };
 
   const columns = [
@@ -287,6 +302,7 @@ const Regions = () => {
             <div className="mt-1 flex-1 lg:min-h-0 overflow-x-auto lg:overflow-hidden">
               <Table
                 dense
+                cellPadding={editorOpen ? 'px-4 py-3' : 'px-6 py-3'}
                 columns={columns}
                 data={pagedData}
                 actions={(row) => (
@@ -371,7 +387,7 @@ const Regions = () => {
             </div>
 
             {/* Inputs Section */}
-            <div className="space-y-3 flex-1 lg:min-h-0 overflow-y-auto pr-0.5 scrollbar-thin pb-1">
+            <div className="space-y-4 sm:space-y-4.5 flex-1 lg:min-h-0 overflow-y-auto pr-0.5 scrollbar-thin py-1.5">
               <div>
                 <Input
                   label={<span>Region Name <span className="text-rose-500">*</span></span>}

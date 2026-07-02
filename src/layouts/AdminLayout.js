@@ -19,7 +19,7 @@ const AdminLayout = () => {
             <Header />
           </div>
           {/* Mobile/tablet: auto scroll. Desktop: overflow-hidden fills remaining height */}
-          <main className="relative flex-1 px-3 pt-2 pb-2 sm:px-4 lg:px-6 overflow-y-auto lg:overflow-hidden lg:min-h-0">
+          <main className="relative flex-1 px-3 pt-1 pb-1 sm:px-4 lg:px-4 overflow-y-auto lg:overflow-hidden lg:min-h-0">
             <div className="absolute inset-0 pointer-events-none bg-dashboard-gradient opacity-60"></div>
             <div className="relative z-10 lg:h-full">
               <Outlet />

@@ -63,7 +63,7 @@ const getTherapyBadgeTheme = (name) => {
 };
 
 const Presences = () => {
-  const { setActivePage, presences, setPresences, showToast, logActivity } = useAppContext();
+  const { setActivePage, presences, showToast, logActivity, addPresence, editPresence, removePresence } = useAppContext();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('Presences');
@@ -172,7 +172,7 @@ const Presences = () => {
   };
 
   // Perform Save
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name) {
       setErrors({ name: 'Please select a city.' });
       showToast('Validation Error', 'City selection is required.', 'failed');
@@ -180,20 +180,23 @@ const Presences = () => {
     }
 
     if (selectedPresence) {
-      setPresences((prev) =>
-        prev.map((item) => (item.id === selectedPresence.id ? { ...item, ...formData } : item))
-      );
-      showToast('Presence Updated', `${formData.name} was successfully updated.`);
-      logActivity(`Updated presence ${formData.name}`, 'Presences');
+      const ok = await editPresence(selectedPresence.id, formData);
+      if (ok) {
+        showToast('Presence Updated', `${formData.name} was successfully updated.`);
+        logActivity(`Updated presence ${formData.name}`, 'Presences');
+      } else {
+        showToast('Error', 'Failed to update presence.', 'failed');
+        return;
+      }
     } else {
-      const newPresence = {
-        ...formData,
-        id: `p${presences.length + 1}`,
-        status: 'Active'
-      };
-      setPresences((prev) => [...prev, newPresence]);
-      showToast('Presence Created', `${formData.name} has been added.`);
-      logActivity(`Created presence ${formData.name}`, 'Presences');
+      const ok = await addPresence({ ...formData, status: 'Active' });
+      if (ok) {
+        showToast('Presence Created', `${formData.name} has been added.`);
+        logActivity(`Created presence ${formData.name}`, 'Presences');
+      } else {
+        showToast('Error', 'Failed to create presence.', 'failed');
+        return;
+      }
     }
 
     setEditorOpen(false);
@@ -206,11 +209,15 @@ const Presences = () => {
     setDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!itemToDelete) return;
-    setPresences((prev) => prev.filter((item) => item.id !== itemToDelete.id));
-    showToast('Presence Deleted', `${itemToDelete.name} was successfully removed.`);
-    logActivity(`Deleted presence ${itemToDelete.name}`, 'Presences', 'Success');
+    const ok = await removePresence(itemToDelete.id);
+    if (ok) {
+      showToast('Presence Deleted', `${itemToDelete.name} was successfully removed.`);
+      logActivity(`Deleted presence ${itemToDelete.name}`, 'Presences');
+    } else {
+      showToast('Error', 'Failed to delete presence.', 'failed');
+    }
     setDeleteModalOpen(false);
     setItemToDelete(null);
   };
@@ -271,7 +278,7 @@ const Presences = () => {
       width: 'w-5/12',
       cell: (row) => {
         const isExpanded = expandedRows[row.id];
-        const displayTherapies = isExpanded ? (row.therapies || []) : (row.therapies || []).slice(0, 3);
+        const displayTherapies = isExpanded ? (row.therapies || []) : (row.therapies || []).slice(0, 2);
 
         return (
           <div className="flex flex-wrap gap-1.5 items-center">
@@ -283,22 +290,22 @@ const Presences = () => {
                 {item}
               </span>
             ))}
-            {!isExpanded && (row.therapies || []).length > 3 && (
+            {!isExpanded && (row.therapies || []).length > 2 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setExpandedRows((prev) => ({ ...prev, [row.id]: true }));
+                  setExpandedRows({ [row.id]: true });
                 }}
                 className="rounded border border-white/8 bg-white/5 px-1.5 py-0.5 text-[8.5px] text-textSecondary font-semibold hover:bg-white/10 hover:text-white transition cursor-pointer select-none"
               >
-                +{(row.therapies || []).length - 3}
+                +{(row.therapies || []).length - 2}
               </button>
             )}
             {isExpanded && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setExpandedRows((prev) => ({ ...prev, [row.id]: false }));
+                  setExpandedRows({});
                 }}
                 className="rounded border border-white/8 bg-white/5 px-1.5 py-0.5 text-[8.5px] text-textSecondary font-semibold hover:bg-white/10 hover:text-white transition cursor-pointer select-none"
               >
@@ -450,7 +457,7 @@ const Presences = () => {
             </div>
 
             {/* Inputs & Preview Scrollable Section */}
-            <div className="space-y-3 flex-1 lg:min-h-0 overflow-y-auto pr-0.5 scrollbar-thin pb-1">
+            <div className="space-y-4 sm:space-y-4.5 flex-1 lg:min-h-0 overflow-y-auto pr-0.5 no-scrollbar py-1.5">
               {/* City Selection Dropdown */}
               <div>
                 <label className="mb-1 block text-xs font-semibold text-textSecondary">
@@ -594,14 +601,14 @@ const Presences = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-1 items-center">
-                      {formData.therapies.slice(0, 3).map((badge) => (
+                      {formData.therapies.slice(0, 2).map((badge) => (
                         <span key={badge} className={`rounded px-1.5 py-0.5 text-[9px] font-semibold ${getTherapyBadgeTheme(badge)}`}>
                           {badge}
                         </span>
                       ))}
-                      {formData.therapies.length > 3 && (
+                      {formData.therapies.length > 2 && (
                         <span className="rounded border border-white/8 bg-white/5 px-1 py-0.5 text-[9px] text-textSecondary font-semibold">
-                          +{formData.therapies.length - 3}
+                          +{formData.therapies.length - 2}
                         </span>
                       )}
                     </div>
