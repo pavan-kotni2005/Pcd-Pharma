@@ -21,11 +21,11 @@ const Dashboard = () => {
     setActivePage('Dashboard');
   }, [setActivePage]);
 
-  // Adjust numbers to match screenshot template while keeping it dynamically linked to database additions
+  // Dynamic statistics linked to database counts
   const stats = useMemo(() => [
     {
       label: 'Total Regions',
-      value: (regions.length || 0) + 7, // Default mock regions is 5. 5 + 7 = 12
+      value: regions.length || 0,
       sub: 'Active regions',
       trend: '↑ 9%',
       icon: Landmark,
@@ -38,7 +38,7 @@ const Dashboard = () => {
     },
     {
       label: 'Total Therapies',
-      value: (therapies.length || 0) + 21, // Default mock therapies is 7. 7 + 21 = 28
+      value: therapies.length || 0,
       sub: 'Therapy categories',
       trend: '↑ 6%',
       icon: Pill,
@@ -51,7 +51,7 @@ const Dashboard = () => {
     },
     {
       label: 'Total Presences',
-      value: (presences.length || 0) + 115, // Default mock presences is 5. 5 + 115 = 120
+      value: presences.length || 0,
       sub: 'Cities covered',
       trend: '↑ 15%',
       icon: Shield,
@@ -64,7 +64,7 @@ const Dashboard = () => {
     },
     {
       label: 'Total Distributors',
-      value: (users.length || 0) + 40, // Default mock users is 5. 5 + 40 = 45
+      value: users.length || 0,
       sub: 'Active distributors',
       trend: '↑ 8%',
       icon: Users,
@@ -77,14 +77,24 @@ const Dashboard = () => {
     }
   ], [regions.length, therapies.length, presences.length, users.length]);
 
-  // Donut chart segments configuration
-  const donutData = [
-    { label: 'North', value: 50, percent: 41.7, color: '#3B5BFF' },
-    { label: 'South', value: 35, percent: 29.2, color: '#27D4A0' },
-    { label: 'West', value: 20, percent: 16.7, color: '#8E74FF' },
-    { label: 'East', value: 15, percent: 12.5, color: '#FF4D6D' },
-    { label: 'Central', value: 10, percent: 8.3, color: '#06B6D4' }
-  ];
+  // Donut chart segments configuration calculated dynamically from presences
+  const donutData = useMemo(() => {
+    const counts = {};
+    presences.forEach((p) => {
+      const name = (p.region || 'Unknown').replace(' Region', '');
+      counts[name] = (counts[name] || 0) + 1;
+    });
+
+    const total = presences.length || 1;
+    const colors = ['#3B5BFF', '#27D4A0', '#8E74FF', '#FF4D6D', '#06B6D4', '#eab308'];
+
+    return Object.keys(counts).map((key, i) => ({
+      label: key,
+      value: counts[key],
+      percent: Math.round((counts[key] / total) * 1000) / 10,
+      color: colors[i % colors.length]
+    }));
+  }, [presences]);
 
   // Circumference of circles centered at 50, 50 with radius 35 (2 * PI * 35 = 219.9)
   const donutCircumference = 219.9;
@@ -235,7 +245,7 @@ const Dashboard = () => {
               </svg>
               {/* Central Text */}
               <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-                <span className="text-[20px] font-black text-white">120</span>
+                <span className="text-[20px] font-black text-white">{presences.length}</span>
                 <span className="text-[9px] font-bold text-textSecondary uppercase tracking-widest mt-1">Total</span>
               </div>
             </div>

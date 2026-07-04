@@ -28,42 +28,37 @@ import { useAppContext } from '../context/AppContext';
 
 const tabs = ['Regions', 'Therapies', 'Presences'];
 
-// Sample list of Indian cities for auto-filling State & Region fields
-const indianCities = [
-  { name: 'Delhi', state: 'Delhi', region: 'North Region', icon: Castle, bg: 'bg-[#3B5BFF]/10', text: 'text-[#3B5BFF]', border: 'border-[#3B5BFF]/20' },
-  { name: 'Mumbai', state: 'Maharashtra', region: 'West Region', icon: Building, bg: 'bg-[#8E74FF]/10', text: 'text-[#8E74FF]', border: 'border-[#8E74FF]/20' },
-  { name: 'Chandigarh', state: 'Chandigarh', region: 'North Region', icon: Milestone, bg: 'bg-[#FFC700]/10', text: 'text-[#FFC700]', border: 'border-[#FFC700]/20' },
-  { name: 'Ludhiana', state: 'Punjab', region: 'North Region', icon: Warehouse, bg: 'bg-[#06B6D4]/10', text: 'text-[#06B6D4]', border: 'border-[#06B6D4]/20' },
-  { name: 'Jaipur', state: 'Rajasthan', region: 'North Region', icon: Compass, bg: 'bg-[#FF4D6D]/10', text: 'text-[#FF4D6D]', border: 'border-[#FF4D6D]/20' },
-  { name: 'Bangalore', state: 'Karnataka', region: 'South Region', icon: Building2, bg: 'bg-[#27D4A0]/10', text: 'text-[#27D4A0]', border: 'border-[#27D4A0]/20' },
-  { name: 'Chennai', state: 'Tamil Nadu', region: 'South Region', icon: Building, bg: 'bg-[#a855f7]/10', text: 'text-[#a855f7]', border: 'border-[#a855f7]/20' },
-  { name: 'Kolkata', state: 'West Bengal', region: 'East Region', icon: Compass, bg: 'bg-[#eab308]/10', text: 'text-[#eab308]', border: 'border-[#eab308]/20' }
-];
-
-// Helper to determine specific therapy badge colors matching the screenshot
+// Helper to determine specific therapy badge colors dynamically using a hash function
 const getTherapyBadgeTheme = (name) => {
-  switch (name) {
-    case 'Antibiotics':
-      return 'bg-[#27D4A0]/10 text-[#27D4A0] border border-[#27D4A0]/20';
-    case 'Gastro':
-      return 'bg-[#06B6D4]/10 text-[#06B6D4] border border-[#06B6D4]/20';
-    case 'Multivitamins':
-      return 'bg-[#8E74FF]/10 text-[#8E74FF] border border-[#8E74FF]/20';
-    case 'Cardiac / Diabetic':
-      return 'bg-[#FF4D6D]/10 text-[#FF4D6D] border border-[#FF4D6D]/20';
-    case 'Pediatric':
-      return 'bg-[#a855f7]/10 text-[#a855f7] border border-[#a855f7]/20';
-    case 'Orthopedic':
-      return 'bg-[#3B5BFF]/10 text-[#3B5BFF] border border-[#3B5BFF]/20';
-    case 'Dermatology':
-      return 'bg-[#eab308]/10 text-[#eab308] border border-[#eab308]/20';
-    default:
-      return 'bg-white/5 text-textSecondary border border-white/10';
+  const themes = [
+    'bg-[#27D4A0]/10 text-[#27D4A0] border border-[#27D4A0]/20',
+    'bg-[#06B6D4]/10 text-[#06B6D4] border border-[#06B6D4]/20',
+    'bg-[#8E74FF]/10 text-[#8E74FF] border border-[#8E74FF]/20',
+    'bg-[#FF4D6D]/10 text-[#FF4D6D] border border-[#FF4D6D]/20',
+    'bg-[#a855f7]/10 text-[#a855f7] border border-[#a855f7]/20',
+    'bg-[#3B5BFF]/10 text-[#3B5BFF] border border-[#3B5BFF]/20',
+    'bg-[#eab308]/10 text-[#eab308] border border-[#eab308]/20'
+  ];
+  if (!name) return themes[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
+  return themes[Math.abs(hash) % themes.length];
 };
 
 const Presences = () => {
-  const { setActivePage, presences, showToast, logActivity, addPresence, editPresence, removePresence } = useAppContext();
+  const {
+    setActivePage,
+    presences,
+    regions,
+    therapies,
+    showToast,
+    logActivity,
+    addPresence,
+    editPresence,
+    removePresence
+  } = useAppContext();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('Presences');
@@ -100,20 +95,6 @@ const Presences = () => {
     setActiveTab(tabName);
     if (tabName === 'Regions') navigate('/regions');
     else if (tabName === 'Therapies') navigate('/therapies');
-  };
-
-  // Sync state/region on selecting city
-  const handleCitySelect = (cityName) => {
-    const city = indianCities.find((c) => c.name === cityName);
-    if (city) {
-      setFormData((prev) => ({
-        ...prev,
-        name: city.name,
-        state: city.state,
-        region: city.region
-      }));
-      if (errors.name) setErrors((prev) => ({ ...prev, name: null }));
-    }
   };
 
   // Handle therapy select toggling
@@ -166,16 +147,21 @@ const Presences = () => {
     setFormData({
       ...item,
       // Map therapies safely
-      therapies: Array.isArray(item.therapies) ? item.therapies : ['Antibiotics', 'Gastro']
+      therapies: Array.isArray(item.therapies) ? item.therapies : []
     });
     setEditorOpen(true);
   };
 
   // Perform Save
   const handleSave = async () => {
-    if (!formData.name) {
-      setErrors({ name: 'Please select a city.' });
-      showToast('Validation Error', 'City selection is required.', 'failed');
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = 'City Name is required.';
+    if (!formData.region) newErrors.region = 'Region is required.';
+    if (!formData.state) newErrors.state = 'State is required.';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showToast('Validation Error', 'Please complete all required fields.', 'failed');
       return;
     }
 
@@ -228,12 +214,10 @@ const Presences = () => {
       accessor: 'name',
       width: 'w-5/12',
       cell: (row) => {
-        const cityMatch = indianCities.find((c) => c.name === row.name) || indianCities[0];
-        const CityIcon = cityMatch.icon;
         return (
           <div className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${cityMatch.bg} ${cityMatch.text} ${cityMatch.border} shadow-sm`}>
-              <CityIcon size={16} />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#3B5BFF]/20 bg-[#3B5BFF]/10 text-[#3B5BFF] shadow-sm">
+              <Building2 size={16} />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
@@ -458,50 +442,78 @@ const Presences = () => {
 
             {/* Inputs & Preview Scrollable Section */}
             <div className="space-y-4 sm:space-y-4.5 flex-1 lg:min-h-0 overflow-y-auto pr-0.5 no-scrollbar py-1.5">
-              {/* City Selection Dropdown */}
+              {/* City Name input */}
               <div>
                 <label className="mb-1 block text-xs font-semibold text-textSecondary">
-                  City <span className="text-rose-500">*</span>
+                  City Name <span className="text-rose-500">*</span>
                 </label>
-                <div className="relative">
-                  <select
-                    value={formData.name}
-                    onChange={(e) => handleCitySelect(e.target.value)}
-                    className="w-full rounded-xl border border-white/[0.04] bg-white/5 px-3.5 py-1.5 text-sm text-white outline-none transition focus:border-[#3B5BFF] appearance-none"
-                  >
-                    <option value="" disabled className="bg-sidebar">Search and select city...</option>
-                    {indianCities.map((city) => (
-                      <option key={city.name} value={city.name} className="bg-sidebar">
-                        {city.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-4 top-2.5 h-4 w-4 text-textSecondary/70 pointer-events-none" />
-                </div>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    if (errors.name) setErrors((prev) => ({ ...prev, name: null }));
+                  }}
+                  placeholder="Enter city name..."
+                  className="w-full rounded-xl border border-white/[0.04] bg-white/5 px-3.5 py-1.5 text-sm text-white outline-none transition focus:border-[#3B5BFF]"
+                />
                 {errors.name && <p className="mt-1 text-xs text-rose-400">{errors.name}</p>}
               </div>
 
-              {/* State & Region (Auto-filled grid) */}
+              {/* Region and State Dropdowns */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-textSecondary">State</label>
-                  <input
-                    type="text"
-                    disabled
-                    placeholder="Auto-filled"
-                    value={formData.state}
-                    className="w-full rounded-xl border border-white/[0.04] bg-white/[0.02] px-3.5 py-1.5 text-sm text-textSecondary outline-none select-none cursor-not-allowed"
-                  />
+                  <label className="mb-1 block text-xs font-semibold text-textSecondary">
+                    Region <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={formData.region}
+                      onChange={(e) => {
+                        const regName = e.target.value;
+                        setFormData((prev) => ({ ...prev, region: regName, state: '' }));
+                        if (errors.region) setErrors((prev) => ({ ...prev, region: null }));
+                      }}
+                      className="w-full rounded-xl border border-white/[0.04] bg-white/5 px-3.5 py-1.5 text-sm text-white outline-none transition focus:border-[#3B5BFF] appearance-none"
+                    >
+                      <option value="" disabled className="bg-sidebar">Select region...</option>
+                      {regions.map((reg) => (
+                        <option key={reg.id || reg._id} value={reg.name} className="bg-sidebar">
+                          {reg.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-2.5 h-4 w-4 text-textSecondary/70 pointer-events-none" />
+                  </div>
+                  {errors.region && <p className="mt-1 text-xs text-rose-400">{errors.region}</p>}
                 </div>
+
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-textSecondary">Region</label>
-                  <input
-                    type="text"
-                    disabled
-                    placeholder="Auto-filled"
-                    value={formData.region}
-                    className="w-full rounded-xl border border-white/[0.04] bg-white/[0.02] px-3.5 py-1.5 text-sm text-textSecondary outline-none select-none cursor-not-allowed"
-                  />
+                  <label className="mb-1 block text-xs font-semibold text-textSecondary">
+                    State <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={formData.state}
+                      disabled={!formData.region}
+                      onChange={(e) => {
+                        setFormData((prev) => ({ ...prev, state: e.target.value }));
+                        if (errors.state) setErrors((prev) => ({ ...prev, state: null }));
+                      }}
+                      className="w-full rounded-xl border border-white/[0.04] bg-white/5 px-3.5 py-1.5 text-sm text-white outline-none transition focus:border-[#3B5BFF] appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="" disabled className="bg-sidebar">Select state...</option>
+                      {regions
+                        .find((r) => r.name === formData.region)
+                        ?.statesList?.map((st) => (
+                          <option key={st} value={st} className="bg-sidebar">
+                            {st}
+                          </option>
+                        )) || []}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-2.5 h-4 w-4 text-textSecondary/70 pointer-events-none" />
+                  </div>
+                  {errors.state && <p className="mt-1 text-xs text-rose-400">{errors.state}</p>}
                 </div>
               </div>
 
@@ -543,13 +555,11 @@ const Presences = () => {
                     className="w-full rounded-xl border border-white/[0.04] bg-white/5 px-3.5 py-1.5 text-sm text-white outline-none transition focus:border-[#3B5BFF] appearance-none"
                   >
                     <option value="" disabled className="bg-sidebar">Select therapies</option>
-                    <option value="Antibiotics" className="bg-sidebar">Antibiotics</option>
-                    <option value="Gastro" className="bg-sidebar">Gastro</option>
-                    <option value="Multivitamins" className="bg-sidebar">Multivitamins</option>
-                    <option value="Cardiac / Diabetic" className="bg-sidebar">Cardiac / Diabetic</option>
-                    <option value="Pediatric" className="bg-sidebar">Pediatric</option>
-                    <option value="Orthopedic" className="bg-sidebar">Orthopedic</option>
-                    <option value="Dermatology" className="bg-sidebar">Dermatology</option>
+                    {therapies.map((t) => (
+                      <option key={t.id || t._id} value={t.shortName || t.therapy} className="bg-sidebar">
+                        {t.shortName || t.therapy}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="absolute right-4 top-2.5 h-4 w-4 text-textSecondary/70 pointer-events-none" />
                 </div>

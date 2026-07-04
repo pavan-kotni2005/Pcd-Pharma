@@ -36,24 +36,25 @@ const Regions = () => {
   });
   const [errors, setErrors] = useState({});
 
-  const availableIndianStates = [
-    'Delhi', 'Haryana', 'Uttar Pradesh', 'Uttarakhand', 'Punjab',
-    'Karnataka', 'Tamil Nadu', 'Andhra Pradesh', 'Kerala',
-    'Maharashtra', 'Gujarat', 'Rajasthan', 'Goa',
-    'West Bengal', 'Bihar', 'Odisha',
-    'Madhya Pradesh', 'Chhattisgarh',
-    'Assam', 'Sikkim'
-  ];
+  const [newStateName, setNewStateName] = useState('');
 
-  const handleStateToggle = (stateName) => {
+  const handleAddState = (e) => {
+    e.preventDefault();
+    if (!newStateName.trim()) return;
+    const cleanName = newStateName.trim();
     setFormData((prev) => {
       const list = prev.statesList || [];
-      const exists = list.includes(stateName);
-      const updated = exists
-        ? list.filter((s) => s !== stateName)
-        : [...list, stateName];
-      return { ...prev, statesList: updated };
+      if (list.includes(cleanName)) return prev;
+      return { ...prev, statesList: [...list, cleanName] };
     });
+    setNewStateName('');
+  };
+
+  const handleRemoveState = (stateName) => {
+    setFormData((prev) => ({
+      ...prev,
+      statesList: (prev.statesList || []).filter((s) => s !== stateName)
+    }));
   };
 
   useEffect(() => {
@@ -415,27 +416,28 @@ const Regions = () => {
 
               <div>
                 <label className="mb-1 block text-[10px] font-semibold text-textSecondary uppercase tracking-wider">States (Optional)</label>
-                <div className="relative mb-1.5">
-                  <select
-                    value=""
-                    onChange={(e) => handleStateToggle(e.target.value)}
-                    className="w-full rounded-xl border border-white/[0.04] bg-white/5 px-3.5 py-1.5 text-xs text-white outline-none transition focus:border-[#3B5BFF] appearance-none"
+                <div className="flex gap-2 mb-1.5">
+                  <input
+                    type="text"
+                    value={newStateName}
+                    onChange={(e) => setNewStateName(e.target.value)}
+                    placeholder="Enter state name (e.g. Goa)..."
+                    className="flex-1 rounded-xl border border-white/[0.04] bg-white/5 px-3 py-1.5 text-xs text-white outline-none transition focus:border-[#3B5BFF]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddState}
+                    className="rounded-xl bg-[#3B5BFF]/10 border border-[#3B5BFF]/20 px-3 py-1.5 text-xs font-bold text-[#3B5BFF] hover:bg-[#3B5BFF]/20 transition-all cursor-pointer"
                   >
-                    <option value="" disabled className="bg-sidebar">Select states</option>
-                    {availableIndianStates.map((state) => (
-                      <option key={state} value={state} className="bg-sidebar">
-                        {state}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-4 top-2.5 h-4 w-4 text-textSecondary/70 pointer-events-none" />
+                    Add
+                  </button>
                 </div>
                 {/* Badges of selected states */}
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {(formData.statesList || []).map((state) => (
                     <span
                       key={state}
-                      onClick={() => handleStateToggle(state)}
+                      onClick={() => handleRemoveState(state)}
                       className="inline-flex items-center gap-1 rounded bg-[#3B5BFF]/10 border border-[#3B5BFF]/20 px-1.5 py-0.5 text-[9px] font-semibold text-[#3B5BFF] cursor-pointer hover:line-through hover:opacity-75 transition-all"
                     >
                       {state} <X size={9} />

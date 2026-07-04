@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import usersData from '../data/users.json';
 import categoriesData from '../data/categories.json';
 import activityData from '../data/activity.json';
+import API_BASE from '../utils/api';
 
 const AppContext = createContext(null);
 
@@ -23,41 +24,60 @@ export const AppProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('isLoggedIn') === 'true';
   });
+  // True while the async /auth/me check is in-flight — prevents premature redirect
+  const [isVerifying, setIsVerifying] = useState(() => {
+    return localStorage.getItem('isLoggedIn') === 'true';
+  });
 
   useEffect(() => {
     const verifyAuth = async () => {
       try {
-        const response = await fetch("http://localhost:5000/auth/me", {
+        const response = await fetch(`${API_BASE}/auth/me`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           credentials: "include"
         });
-        const data = await response.json();
-        if (data.success) {
-          setIsLoggedIn(true);
-          localStorage.setItem('isLoggedIn', 'true');
-        } else {
+        if (response.status === 401) {
+          // Token is invalid or expired — clear the session
           setIsLoggedIn(false);
           localStorage.removeItem('isLoggedIn');
+        } else if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setIsLoggedIn(true);
+            localStorage.setItem('isLoggedIn', 'true');
+          } else {
+            setIsLoggedIn(false);
+            localStorage.removeItem('isLoggedIn');
+          }
         }
+        // On 5xx or unexpected errors: keep the user logged in (don't disrupt UX)
       } catch (err) {
-        console.error("Auth verification error:", err);
+        // Network error (server cold start / no internet) — keep session alive
+        console.warn("[AUTH] Network error during verification, keeping session:", err.message);
+      } finally {
+        setIsVerifying(false);
       }
     };
     if (localStorage.getItem('isLoggedIn') === 'true') {
       verifyAuth();
+    } else {
+      setIsVerifying(false);
     }
   }, []);
 
   const login = async (userId, password) => {
     try {
-      const response = await fetch("http://localhost:5000/auth/login", {
+      console.log(`[AUTH] Initiating login for: ${userId} at ${API_BASE}/auth/login`);
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId, password }),
         credentials: "include"
       });
+      console.log(`[AUTH] Login response status: ${response.status}`);
       const data = await response.json();
+      console.log(`[AUTH] Login response body:`, data);
       if (data.success) {
         localStorage.setItem('isLoggedIn', 'true');
         setIsLoggedIn(true);
@@ -65,14 +85,14 @@ export const AppProvider = ({ children }) => {
       }
       return false;
     } catch (err) {
-      console.error("Login call failed:", err);
+      console.error("[AUTH] Login network request failed:", err);
       return false;
     }
   };
 
   const logout = async () => {
     try {
-      await fetch("http://localhost:5000/auth/logout", {
+      await fetch(`${API_BASE}/auth/logout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include"
@@ -87,24 +107,27 @@ export const AppProvider = ({ children }) => {
   // ─── Regions ───────────────────────────────────────────
   const fetchRegions = async () => {
     try {
-      const response = await fetch("http://localhost:5000/region/get", {
+      console.log(`[DATA] Fetching regions from: ${API_BASE}/region/get`);
+      const response = await fetch(`${API_BASE}/region/get`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         credentials: "include"
       });
+      console.log(`[DATA] Regions response status: ${response.status}`);
       const data = await response.json();
+      console.log(`[DATA] Regions response body:`, data);
       if (data.success && data.data) {
         const mapped = data.data.map(item => ({ ...item, id: item._id }));
         setRegions(mapped);
       }
     } catch (err) {
-      console.error("Fetch regions failed:", err);
+      console.error("[DATA] Fetch regions failed:", err);
     }
   };
 
   const addRegion = async (regionData) => {
     try {
-      const response = await fetch("http://localhost:5000/region/create", {
+      const response = await fetch(`${API_BASE}/region/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(regionData),
@@ -121,7 +144,7 @@ export const AppProvider = ({ children }) => {
 
   const editRegion = async (id, regionData) => {
     try {
-      const response = await fetch(`http://localhost:5000/region/update/${id}`, {
+      const response = await fetch(`${API_BASE}/region/update/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(regionData),
@@ -138,7 +161,7 @@ export const AppProvider = ({ children }) => {
 
   const removeRegion = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/region/delete/${id}`, {
+      const response = await fetch(`${API_BASE}/region/delete/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         credentials: "include"
@@ -155,24 +178,27 @@ export const AppProvider = ({ children }) => {
   // ─── Therapies ─────────────────────────────────────────
   const fetchTherapies = async () => {
     try {
-      const response = await fetch("http://localhost:5000/therapy/get", {
+      console.log(`[DATA] Fetching therapies from: ${API_BASE}/therapy/get`);
+      const response = await fetch(`${API_BASE}/therapy/get`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         credentials: "include"
       });
+      console.log(`[DATA] Therapies response status: ${response.status}`);
       const data = await response.json();
+      console.log(`[DATA] Therapies response body:`, data);
       if (data.success && data.data) {
         const mapped = data.data.map(item => ({ ...item, id: item._id }));
         setTherapies(mapped);
       }
     } catch (err) {
-      console.error("Fetch therapies failed:", err);
+      console.error("[DATA] Fetch therapies failed:", err);
     }
   };
 
   const addTherapy = async (therapyData) => {
     try {
-      const response = await fetch("http://localhost:5000/therapy/create", {
+      const response = await fetch(`${API_BASE}/therapy/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(therapyData),
@@ -189,7 +215,7 @@ export const AppProvider = ({ children }) => {
 
   const editTherapy = async (id, therapyData) => {
     try {
-      const response = await fetch(`http://localhost:5000/therapy/update/${id}`, {
+      const response = await fetch(`${API_BASE}/therapy/update/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(therapyData),
@@ -206,7 +232,7 @@ export const AppProvider = ({ children }) => {
 
   const removeTherapy = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/therapy/delete/${id}`, {
+      const response = await fetch(`${API_BASE}/therapy/delete/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         credentials: "include"
@@ -223,24 +249,27 @@ export const AppProvider = ({ children }) => {
   // ─── Presences ─────────────────────────────────────────
   const fetchPresences = async () => {
     try {
-      const response = await fetch("http://localhost:5000/presence/get", {
+      console.log(`[DATA] Fetching presences from: ${API_BASE}/presence/get`);
+      const response = await fetch(`${API_BASE}/presence/get`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         credentials: "include"
       });
+      console.log(`[DATA] Presences response status: ${response.status}`);
       const data = await response.json();
+      console.log(`[DATA] Presences response body:`, data);
       if (data.success && data.data) {
         const mapped = data.data.map(item => ({ ...item, id: item._id }));
         setPresences(mapped);
       }
     } catch (err) {
-      console.error("Fetch presences failed:", err);
+      console.error("[DATA] Fetch presences failed:", err);
     }
   };
 
   const addPresence = async (presenceData) => {
     try {
-      const response = await fetch("http://localhost:5000/presence/create", {
+      const response = await fetch(`${API_BASE}/presence/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(presenceData),
@@ -257,7 +286,7 @@ export const AppProvider = ({ children }) => {
 
   const editPresence = async (id, presenceData) => {
     try {
-      const response = await fetch(`http://localhost:5000/presence/update/${id}`, {
+      const response = await fetch(`${API_BASE}/presence/update/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(presenceData),
@@ -274,7 +303,7 @@ export const AppProvider = ({ children }) => {
 
   const removePresence = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/presence/delete/${id}`, {
+      const response = await fetch(`${API_BASE}/presence/delete/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         credentials: "include"
@@ -334,6 +363,7 @@ export const AppProvider = ({ children }) => {
     showToast,
     logActivity,
     isLoggedIn,
+    isVerifying,
     login,
     logout,
     // Regions
@@ -345,7 +375,7 @@ export const AppProvider = ({ children }) => {
   }), [
     sidebarOpen, profileOpen, activePage,
     therapies, regions, users, categories, presences, activity,
-    isLoggedIn
+    isLoggedIn, isVerifying
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
