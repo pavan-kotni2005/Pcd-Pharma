@@ -5,6 +5,7 @@ import DashboardPage from './pages/Dashboard';
 import RegionsPage from './pages/Regions';
 import TherapiesPage from './pages/Therapies';
 import PresencesPage from './pages/Presences';
+import NetworkPage from './pages/Network';
 import CategoriesPage from './pages/Categories';
 import UsersPage from './pages/Users';
 import ActivityLogPage from './pages/ActivityLog';
@@ -64,6 +65,8 @@ function App() {
             <Route path="regions" element={<RegionsPage />} />
             <Route path="therapies" element={<TherapiesPage />} />
             <Route path="presences" element={<PresencesPage />} />
+            <Route path="network" element={<NetworkPage />} />
+            <Route path="partners" element={<Navigate to="/network" replace />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="activity" element={<ActivityLogPage />} />

@@ -12,14 +12,16 @@ import {
   FiSettings,
   FiTag,
   FiChevronRight,
-  FiX
+  FiX,
+  FiBriefcase
 } from 'react-icons/fi';
 
 const mainMenuItems = [
   { label: 'Dashboard', icon: FiHome, path: '/' },
   { label: 'Regions', icon: FiMap, path: '/regions' },
   { label: 'Therapies', icon: FiCpu, path: '/therapies' },
-  { label: 'Presences', icon: FiLayers, path: '/presences' }
+  { label: 'Presences', icon: FiLayers, path: '/presences' },
+  { label: 'Network', icon: FiBriefcase, path: '/network' }
 ];
 
 const settingsMenuItems = [

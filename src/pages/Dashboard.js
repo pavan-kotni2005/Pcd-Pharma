@@ -14,7 +14,7 @@ import {
 import { useAppContext } from '../context/AppContext';
 
 const Dashboard = () => {
-  const { setActivePage, regions, therapies, presences, users, activity } = useAppContext();
+  const { setActivePage, regions, therapies, presences, activity, partners } = useAppContext();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -63,9 +63,9 @@ const Dashboard = () => {
       path: '/presences'
     },
     {
-      label: 'Total Distributors',
-      value: users.length || 0,
-      sub: 'Active distributors',
+      label: 'Total Network',
+      value: partners.length || 0,
+      sub: 'Active partners',
       trend: '↑ 8%',
       icon: Users,
       color: 'from-[#FFC700] to-[#FFE17D]',
@@ -73,9 +73,9 @@ const Dashboard = () => {
       bgClass: 'bg-[#FFC700]/10',
       textClass: 'text-[#FFC700]',
       lineColor: 'from-[#FFC700] to-[#FFE17D]',
-      path: '/users'
+      path: '/network'
     }
-  ], [regions.length, therapies.length, presences.length, users.length]);
+  ], [regions.length, therapies.length, presences.length, partners.length]);
 
   // Donut chart segments configuration calculated dynamically from presences
   const donutData = useMemo(() => {
@@ -182,7 +182,7 @@ const Dashboard = () => {
             { label: 'Add Region', sub: 'Create new region', icon: MapPin, color: 'bg-[#3B5BFF]/10 text-[#3B5BFF] border-[#3B5BFF]/20', path: '/regions' },
             { label: 'Add Therapy', sub: 'Create new therapy', icon: Pill, color: 'bg-[#8E74FF]/10 text-[#8E74FF] border-[#8E74FF]/20', path: '/therapies' },
             { label: 'Add Presence', sub: 'Add city presence', icon: Shield, color: 'bg-[#27D4A0]/10 text-[#27D4A0] border-[#27D4A0]/20', path: '/presences' },
-            { label: 'Add Distributors', sub: 'Add new distributor', icon: Users, color: 'bg-[#FFC700]/10 text-[#FFC700] border-[#FFC700]/20', path: '/users' }
+            { label: 'Add Network', sub: 'Add network partner', icon: Users, color: 'bg-[#FFC700]/10 text-[#FFC700] border-[#FFC700]/20', path: '/network' }
           ].map((act) => {
             const ActIcon = act.icon;
             return (

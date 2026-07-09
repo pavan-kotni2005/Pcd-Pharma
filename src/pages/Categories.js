@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FiPlus, FiSearch, FiFilter, FiEdit, FiTrash2, FiTag } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiFilter, FiEdit, FiTrash2, FiTag, FiEye } from 'react-icons/fi';
 import Drawer from '../components/Drawer';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -13,6 +13,7 @@ import { useAppContext } from '../context/AppContext';
 const Categories = () => {
   const { setActivePage, categories, setCategories, showToast, logActivity } = useAppContext();
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [viewMode, setViewMode] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
@@ -44,15 +45,35 @@ const Categories = () => {
   const openAdd = () => {
     setSelectedCategory(null);
     setErrors({});
+    setViewMode(false);
     const today = new Date().toISOString().split('T')[0];
     setFormData({ category: '', description: '', status: 'Active', created: today });
     setOpenDrawer(true);
   };
 
-  const openEdit = (category) => {
-    setSelectedCategory(category);
+  const openEdit = (item) => {
+    setSelectedCategory(item);
     setErrors({});
-    setFormData(category);
+    setViewMode(false);
+    setFormData({
+      category: item.category || '',
+      description: item.description || '',
+      status: item.status || 'Active',
+      created: item.created || ''
+    });
+    setOpenDrawer(true);
+  };
+
+  const openView = (item) => {
+    setSelectedCategory(item);
+    setErrors({});
+    setViewMode(true);
+    setFormData({
+      category: item.category || '',
+      description: item.description || '',
+      status: item.status || 'Active',
+      created: item.created || ''
+    });
     setOpenDrawer(true);
   };
 
@@ -60,39 +81,45 @@ const Categories = () => {
     const newErrors = {};
     if (!formData.category.trim()) newErrors.category = 'Category Name is required.';
     if (!formData.description.trim()) newErrors.description = 'Description is required.';
-    if (!formData.created) newErrors.created = 'Created Date is required.';
+    if (!formData.created.trim()) newErrors.created = 'Created Date is required.';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      showToast('Validation Error', 'Please complete all fields.', 'failed');
+      showToast('Validation Error', 'Please correct all error fields.', 'failed');
       return;
     }
 
     if (selectedCategory) {
-      setCategories((prev) => prev.map((item) => (item.id === selectedCategory.id ? { ...item, ...formData } : item)));
-      showToast('Category Updated', `${formData.category} has been saved.`);
-      logActivity(`Updated category ${formData.category}`, 'Categories');
+      // Edit
+      setCategories((prev) =>
+        prev.map((item) => (item.id === selectedCategory.id ? { ...item, ...formData } : item))
+      );
+      showToast('Category Updated', `${formData.category} was updated successfully.`);
+      logActivity(`Updated therapy group ${formData.category}`, 'Categories');
     } else {
-      const newCategory = { ...formData, id: `c${categories.length + 1}` };
-      setCategories((prev) => [newCategory, ...prev]);
-      showToast('Category Created', `${formData.category} was successfully created.`);
-      logActivity(`Created category ${formData.category}`, 'Categories');
+      // Add
+      const newCategory = {
+        ...formData,
+        id: `c${categories.length + 1}`
+      };
+      setCategories((prev) => [...prev, newCategory]);
+      showToast('Category Created', `${formData.category} has been added.`);
+      logActivity(`Created therapy group ${formData.category}`, 'Categories');
     }
 
     setOpenDrawer(false);
-    setSelectedCategory(null);
   };
 
-  const handleDeleteTrigger = (category) => {
-    setItemToDelete(category);
+  const handleDeleteTrigger = (item) => {
+    setItemToDelete(item);
     setDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = () => {
     if (!itemToDelete) return;
     setCategories((prev) => prev.filter((item) => item.id !== itemToDelete.id));
-    showToast('Category Deleted', `${itemToDelete.category} was deleted.`);
-    logActivity(`Deleted category ${itemToDelete.category}`, 'Categories', 'Success');
+    showToast('Category Deleted', `${itemToDelete.category} was deleted successfully.`);
+    logActivity(`Deleted therapy group ${itemToDelete.category}`, 'Categories');
     setDeleteModalOpen(false);
     setItemToDelete(null);
   };
@@ -145,6 +172,15 @@ const Categories = () => {
         data={pagedData}
         actions={(row) => (
           <div className="flex items-center justify-end gap-2">
+            {/* View Button */}
+            <button
+              onClick={() => openView(row)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/5 text-sm text-emerald-400 transition hover:bg-white/10"
+              title="View Details"
+            >
+              <FiEye size={14} />
+            </button>
+            {/* Edit Button */}
             <button
               onClick={() => openEdit(row)}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/5 text-sm text-white transition hover:bg-white/10"
@@ -152,6 +188,7 @@ const Categories = () => {
             >
               <FiEdit size={14} />
             </button>
+            {/* Delete Button */}
             <button
               onClick={() => handleDeleteTrigger(row)}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-[#FF4D6D]/10 text-sm text-[#FF4D6D] transition hover:bg-[#FF4D6D]/15"
@@ -169,46 +206,59 @@ const Categories = () => {
       {/* Drawer Form */}
       <Drawer
         open={openDrawer}
-        title={selectedCategory ? 'Edit Category' : 'Add Category'}
+        title={viewMode ? 'View Category Details' : selectedCategory ? 'Edit Category' : 'Add Category'}
         onClose={() => setOpenDrawer(false)}
         footer={
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <Button variant="secondary" onClick={() => setOpenDrawer(false)}>Cancel</Button>
-            <Button onClick={handleSave}>Save Category</Button>
-          </div>
+          viewMode ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button onClick={() => setOpenDrawer(false)} className="bg-[#3B5BFF] text-white">Close</Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button variant="secondary" onClick={() => setOpenDrawer(false)}>Cancel</Button>
+              <Button onClick={handleSave}>Save Category</Button>
+            </div>
+          )
         }
       >
-        <div className="grid gap-5">
-          <Input
-            label="Category Name"
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            error={errors.category}
-          />
-          <div>
-            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-textSecondary font-semibold">Description</span>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={4}
-              placeholder="Provide information about the category..."
-              className={`w-full rounded-2xl border ${errors.description ? 'border-rose-500' : 'border-white/8'} bg-white/5 px-4 py-3.5 text-sm text-white outline-none transition focus:border-[#3B5BFF] focus:ring-2 focus:ring-[#3B5BFF]/20`}
-            />
-            {errors.description && <p className="mt-1 text-xs text-rose-400">{errors.description}</p>}
-          </div>
-          <div className="grid gap-5 sm:grid-cols-2">
+        <div className="flex-1 flex flex-col justify-between">
+          <div className="grid gap-5">
             <Input
-              label="Created Date"
-              type="date"
-              value={formData.created}
-              onChange={(e) => setFormData({ ...formData, created: e.target.value })}
-              error={errors.created}
+              label="Category Name"
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              error={errors.category}
+              disabled={viewMode}
             />
+            <div>
+              <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-textSecondary font-semibold">Description</span>
+              <textarea
+                value={formData.description}
+                disabled={viewMode}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={2}
+                placeholder="Provide information about the category..."
+                className={`w-full rounded-2xl border ${errors.description ? 'border-rose-500' : 'border-white/8'} bg-white/5 px-4 py-3.5 text-sm text-white outline-none transition focus:border-[#3B5BFF] focus:ring-2 focus:ring-[#3B5BFF]/20 disabled:opacity-75 disabled:cursor-not-allowed`}
+              />
+              {errors.description && <p className="mt-1 text-xs text-rose-400">{errors.description}</p>}
+            </div>
+            {/* Vertically stacked Created Date and Status */}
+            <div>
+              <Input
+                label="Created Date"
+                type="date"
+                value={formData.created}
+                onChange={(e) => setFormData({ ...formData, created: e.target.value })}
+                error={errors.created}
+                disabled={viewMode}
+              />
+            </div>
             <div>
               <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-textSecondary font-semibold">Status</span>
               <StatusToggle
                 checked={formData.status === 'Active'}
-                onChange={(checked) => setFormData({ ...formData, status: checked ? 'Active' : 'Offline' })}
+                disabled={viewMode}
+                onChange={(checked) => !viewMode && setFormData({ ...formData, status: checked ? 'Active' : 'Offline' })}
               />
             </div>
           </div>

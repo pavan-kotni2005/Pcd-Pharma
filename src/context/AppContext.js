@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import usersData from '../data/users.json';
 import categoriesData from '../data/categories.json';
 import activityData from '../data/activity.json';
-import API_BASE from '../utils/api';
+import API_BASE, { setToken, removeToken, authHeaders } from '../utils/api';
 
 const AppContext = createContext(null);
 
@@ -19,6 +19,7 @@ export const AppProvider = ({ children }) => {
   const [categories, setCategories] = useState(categoriesData);
   const [presences, setPresences] = useState([]);
   const [activity, setActivity] = useState(activityData);
+  const [partners, setPartners] = useState([]);
 
   // Authentication State
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -34,7 +35,7 @@ export const AppProvider = ({ children }) => {
       try {
         const response = await fetch(`${API_BASE}/auth/me`, {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders({ "Content-Type": "application/json" }),
           credentials: "include"
         });
         if (response.status === 401) {
@@ -79,6 +80,7 @@ export const AppProvider = ({ children }) => {
       const data = await response.json();
       console.log(`[AUTH] Login response body:`, data);
       if (data.success) {
+        setToken(data.token);
         localStorage.setItem('isLoggedIn', 'true');
         setIsLoggedIn(true);
         return true;
@@ -94,12 +96,13 @@ export const AppProvider = ({ children }) => {
     try {
       await fetch(`${API_BASE}/auth/logout`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         credentials: "include"
       });
     } catch (err) {
       console.error("Logout call failed:", err);
     }
+    removeToken();
     localStorage.removeItem('isLoggedIn');
     setIsLoggedIn(false);
   };
@@ -110,7 +113,7 @@ export const AppProvider = ({ children }) => {
       console.log(`[DATA] Fetching regions from: ${API_BASE}/region/get`);
       const response = await fetch(`${API_BASE}/region/get`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         credentials: "include"
       });
       console.log(`[DATA] Regions response status: ${response.status}`);
@@ -129,7 +132,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/region/create`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(regionData),
         credentials: "include"
       });
@@ -146,7 +149,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/region/update/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(regionData),
         credentials: "include"
       });
@@ -163,7 +166,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/region/delete/${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         credentials: "include"
       });
       const data = await response.json();
@@ -181,7 +184,7 @@ export const AppProvider = ({ children }) => {
       console.log(`[DATA] Fetching therapies from: ${API_BASE}/therapy/get`);
       const response = await fetch(`${API_BASE}/therapy/get`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         credentials: "include"
       });
       console.log(`[DATA] Therapies response status: ${response.status}`);
@@ -200,7 +203,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/therapy/create`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(therapyData),
         credentials: "include"
       });
@@ -217,7 +220,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/therapy/update/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(therapyData),
         credentials: "include"
       });
@@ -234,7 +237,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/therapy/delete/${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         credentials: "include"
       });
       const data = await response.json();
@@ -252,7 +255,7 @@ export const AppProvider = ({ children }) => {
       console.log(`[DATA] Fetching presences from: ${API_BASE}/presence/get`);
       const response = await fetch(`${API_BASE}/presence/get`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         credentials: "include"
       });
       console.log(`[DATA] Presences response status: ${response.status}`);
@@ -271,7 +274,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/presence/create`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(presenceData),
         credentials: "include"
       });
@@ -288,7 +291,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/presence/update/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(presenceData),
         credentials: "include"
       });
@@ -305,7 +308,7 @@ export const AppProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/presence/delete/${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         credentials: "include"
       });
       const data = await response.json();
@@ -317,12 +320,84 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // ─── Partners ──────────────────────────────────────────
+  const fetchPartners = async () => {
+    try {
+      console.log(`[DATA] Fetching partners from: ${API_BASE}/network/get`);
+      const response = await fetch(`${API_BASE}/network/get`, {
+        method: "GET",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        credentials: "include"
+      });
+      console.log(`[DATA] Partners response status: ${response.status}`);
+      const data = await response.json();
+      console.log(`[DATA] Partners response body:`, data);
+      if (data.success && data.data) {
+        const mapped = data.data.map(item => ({ ...item, id: item._id }));
+        setPartners(mapped);
+      }
+    } catch (err) {
+      console.error("[DATA] Fetch partners failed:", err);
+    }
+  };
+
+  const addPartner = async (partnerData) => {
+    try {
+      const response = await fetch(`${API_BASE}/network/create`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(partnerData),
+        credentials: "include"
+      });
+      const data = await response.json();
+      if (data.success) { fetchPartners(); return true; }
+      return false;
+    } catch (err) {
+      console.error("Add partner failed:", err);
+      return false;
+    }
+  };
+
+  const editPartner = async (id, partnerData) => {
+    try {
+      const response = await fetch(`${API_BASE}/network/update/${id}`, {
+        method: "PUT",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(partnerData),
+        credentials: "include"
+      });
+      const data = await response.json();
+      if (data.success) { fetchPartners(); return true; }
+      return false;
+    } catch (err) {
+      console.error("Edit partner failed:", err);
+      return false;
+    }
+  };
+
+  const removePartner = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE}/network/delete/${id}`, {
+        method: "DELETE",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        credentials: "include"
+      });
+      const data = await response.json();
+      if (data.success) { fetchPartners(); return true; }
+      return false;
+    } catch (err) {
+      console.error("Remove partner failed:", err);
+      return false;
+    }
+  };
+
   // Fetch all on login
   useEffect(() => {
     if (isLoggedIn) {
       fetchRegions();
       fetchTherapies();
       fetchPresences();
+      fetchPartners();
     }
   }, [isLoggedIn]);
 
@@ -360,6 +435,7 @@ export const AppProvider = ({ children }) => {
     categories, setCategories,
     presences, setPresences,
     activity, setActivity,
+    partners, setPartners,
     showToast,
     logActivity,
     isLoggedIn,
@@ -371,10 +447,12 @@ export const AppProvider = ({ children }) => {
     // Therapies
     addTherapy, editTherapy, removeTherapy, fetchTherapies,
     // Presences
-    addPresence, editPresence, removePresence, fetchPresences
+    addPresence, editPresence, removePresence, fetchPresences,
+    // Partners
+    addPartner, editPartner, removePartner, fetchPartners
   }), [
     sidebarOpen, profileOpen, activePage,
-    therapies, regions, users, categories, presences, activity,
+    therapies, regions, users, categories, presences, activity, partners,
     isLoggedIn, isVerifying
   ]);
 

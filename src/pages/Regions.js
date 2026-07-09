@@ -1,24 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Search, Filter, Plus, Edit, Trash2, X, ChevronDown, Info } from 'lucide-react';
+import { MapPin, Search, Plus, Edit, Trash2, X, Eye } from 'lucide-react';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Badge from '../components/Badge';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
-import StatusToggle from '../components/StatusToggle';
 import Tabs from '../components/Tabs';
 import { useAppContext } from '../context/AppContext';
 
 const tabs = ['Regions', 'Therapies', 'Presences'];
 
 const Regions = () => {
-  const { setActivePage, regions, setRegions, showToast, logActivity, addRegion, editRegion, removeRegion } = useAppContext();
+  const { setActivePage, regions, showToast, logActivity, addRegion, editRegion, removeRegion } = useAppContext();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Regions');
-  const [editorOpen, setEditorOpen] = useState(false); // Closed by default
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [viewMode, setViewMode] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setActivePage('Regions');
+  }, [setActivePage]);
 
   // Confirmation Modal
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -50,38 +54,24 @@ const Regions = () => {
     setNewStateName('');
   };
 
-  const handleRemoveState = (stateName) => {
+  const handleRemoveState = (state) => {
+    if (viewMode) return;
     setFormData((prev) => ({
       ...prev,
-      statesList: (prev.statesList || []).filter((s) => s !== stateName)
+      statesList: (prev.statesList || []).filter((s) => s !== state)
     }));
   };
 
-  useEffect(() => {
-    setActivePage('Regions');
-  }, [setActivePage]);
-
-  // Navigate on tab clicking
-  const handleTabChange = (tabName) => {
-    setActiveTab(tabName);
-    if (tabName === 'Therapies') navigate('/therapies');
-    else if (tabName === 'Presences') navigate('/presences');
-  };
-
-  // Synchronize Slug from Name
-  const handleNameChange = (val) => {
-    const slugged = val
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
-    setFormData((prev) => ({ ...prev, name: val, slug: slugged }));
-    if (errors.name) setErrors((prev) => ({ ...prev, name: null }));
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'Therapies') navigate('/therapies');
+    if (tab === 'Presences') navigate('/presences');
   };
 
   const filtered = useMemo(() => {
-    return regions.filter((region) => 
-      region.name.toLowerCase().includes(search.toLowerCase()) || 
-      (region.description || '').toLowerCase().includes(search.toLowerCase())
+    return regions.filter((reg) =>
+      reg.name.toLowerCase().includes(search.toLowerCase()) ||
+      (reg.description || '').toLowerCase().includes(search.toLowerCase())
     );
   }, [regions, search]);
 
@@ -93,6 +83,7 @@ const Regions = () => {
   const openAdd = () => {
     setSelectedRegion(null);
     setErrors({});
+    setViewMode(false);
     setFormData({
       name: '',
       description: '',
@@ -107,6 +98,22 @@ const Regions = () => {
   const openEdit = (region) => {
     setSelectedRegion(region);
     setErrors({});
+    setViewMode(false);
+    setFormData({
+      name: region.name || '',
+      description: region.description || '',
+      statesList: region.statesList || [],
+      presences: region.presences || 0,
+      distributors: region.distributors || 0,
+      status: region.status || 'Active'
+    });
+    setEditorOpen(true);
+  };
+
+  const openView = (region) => {
+    setSelectedRegion(region);
+    setErrors({});
+    setViewMode(true);
     setFormData({
       name: region.name || '',
       description: region.description || '',
@@ -282,13 +289,6 @@ const Regions = () => {
                     className="w-full bg-transparent text-white outline-none"
                   />
                 </div>
-                {/* Filter */}
-                <button
-                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.04] bg-white/5 text-sm text-white hover:bg-white/10"
-                  title="Filter options"
-                >
-                  <Filter className="h-3.5 w-3.5" />
-                </button>
                 {/* Add Trigger */}
                 <button
                   onClick={openAdd}
@@ -308,6 +308,15 @@ const Regions = () => {
                 data={pagedData}
                 actions={(row) => (
                   <div className="flex items-center justify-end gap-1.5">
+                    {/* View Button */}
+                    <button
+                      onClick={() => openView(row)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-emerald-400 transition hover:bg-white/10"
+                      title="View Details"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                    {/* Edit Button */}
                     <button
                       onClick={() => openEdit(row)}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-[#3B5BFF] transition hover:bg-white/10"
@@ -315,6 +324,7 @@ const Regions = () => {
                     >
                       <Edit className="h-4 w-4" />
                     </button>
+                    {/* Delete Button */}
                     <button
                       onClick={() => handleDeleteTrigger(row)}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-[#FF4D6D] transition hover:bg-white/10"
@@ -374,9 +384,11 @@ const Regions = () => {
             <div className="flex items-center justify-between pb-1.5 border-b border-white/[0.04] mb-2 shrink-0">
               <div>
                 <h3 className="text-sm font-bold text-white">
-                  {selectedRegion ? 'Edit Region' : 'Add New Region'}
+                  {viewMode ? 'View Region Details' : selectedRegion ? 'Edit Region' : 'Add New Region'}
                 </h3>
-                <p className="text-[10px] text-textSecondary mt-0.5">Create a new region and manage states</p>
+                <p className="text-[10px] text-textSecondary mt-0.5">
+                  {viewMode ? 'Properties of the selected region' : 'Create a new region and manage states'}
+                </p>
               </div>
               <button
                 type="button"
@@ -387,121 +399,137 @@ const Regions = () => {
               </button>
             </div>
 
-            {/* Inputs Section */}
-            <div className="space-y-4 sm:space-y-4.5 flex-1 lg:min-h-0 overflow-y-auto pr-0.5 scrollbar-thin py-1.5">
-              <div>
-                <Input
-                  label={<span>Region Name <span className="text-rose-500">*</span></span>}
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Enter region name"
-                  error={errors.name}
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-0.5">
-                  <label className="text-[10px] font-semibold text-textSecondary uppercase tracking-wider">Description (Optional)</label>
-                  <span className="text-[9px] text-textSecondary font-semibold">{(formData.description || '').length}/200</span>
-                </div>
-                <textarea
-                  value={formData.description || ''}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  maxLength={200}
-                  rows={2}
-                  placeholder="Enter description..."
-                  className="w-full rounded-lg border border-white/[0.04] bg-white/5 px-2.5 py-1.5 text-xs text-white outline-none transition focus:border-[#3B5BFF] resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-[10px] font-semibold text-textSecondary uppercase tracking-wider">States (Optional)</label>
-                <div className="flex gap-2 mb-1.5">
-                  <input
-                    type="text"
-                    value={newStateName}
-                    onChange={(e) => setNewStateName(e.target.value)}
-                    placeholder="Enter state name (e.g. Goa)..."
-                    className="flex-1 rounded-xl border border-white/[0.04] bg-white/5 px-3 py-1.5 text-xs text-white outline-none transition focus:border-[#3B5BFF]"
+            {/* Inputs Section - Non scrollable layout optimized to fill height */}
+            <div className="flex-1 lg:min-h-0 overflow-y-visible py-1.5 flex flex-col justify-between">
+              <div className="flex-1 flex flex-col justify-between py-1">
+                <div>
+                  <Input
+                    label={<span>Region Name <span className="text-rose-500">*</span></span>}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Enter region name"
+                    error={errors.name}
+                    disabled={viewMode}
                   />
-                  <button
-                    type="button"
-                    onClick={handleAddState}
-                    className="rounded-xl bg-[#3B5BFF]/10 border border-[#3B5BFF]/20 px-3 py-1.5 text-xs font-bold text-[#3B5BFF] hover:bg-[#3B5BFF]/20 transition-all cursor-pointer"
-                  >
-                    Add
-                  </button>
                 </div>
-                {/* Badges of selected states */}
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {(formData.statesList || []).map((state) => (
-                    <span
-                      key={state}
-                      onClick={() => handleRemoveState(state)}
-                      className="inline-flex items-center gap-1 rounded bg-[#3B5BFF]/10 border border-[#3B5BFF]/20 px-1.5 py-0.5 text-[9px] font-semibold text-[#3B5BFF] cursor-pointer hover:line-through hover:opacity-75 transition-all"
-                    >
-                      {state} <X size={9} />
-                    </span>
-                  ))}
+
+                <div>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[10px] font-semibold text-textSecondary uppercase tracking-wider">Description (Optional)</label>
+                    <span className="text-[9px] text-textSecondary font-semibold">{(formData.description || '').length}/200</span>
+                  </div>
+                  <textarea
+                    value={formData.description || ''}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    maxLength={200}
+                    rows={2}
+                    disabled={viewMode}
+                    placeholder="Enter description..."
+                    className="w-full rounded-xl border border-white/[0.04] bg-white/5 px-3.5 py-1.5 text-sm text-white outline-none transition focus:border-[#3B5BFF] resize-none disabled:opacity-75 disabled:cursor-not-allowed"
+                  />
                 </div>
-              </div>
 
-              <div>
-                <Input
-                  label={<span>Active Presences</span>}
-                  type="number"
-                  value={formData.presences}
-                  onChange={(e) => setFormData({ ...formData, presences: Number(e.target.value) })}
-                />
-              </div>
-
-              <div>
-                <Input
-                  label={<span>Distributors</span>}
-                  type="number"
-                  value={formData.distributors}
-                  onChange={(e) => setFormData({ ...formData, distributors: Number(e.target.value) })}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1 border-t border-white/[0.04] pt-2 mt-1">
-                <span className="text-[10px] font-semibold text-textSecondary uppercase tracking-wider">Status <span className="text-rose-500">*</span></span>
-                <div className="flex items-center gap-3 mt-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, status: formData.status === 'Active' ? 'Inactive' : 'Active' })}
-                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      formData.status === 'Active' ? 'bg-[#10B981]' : 'bg-white/10'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        formData.status === 'Active' ? 'translate-x-4' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                  <div className="flex flex-col text-[11px] leading-tight font-medium">
-                    <span className={formData.status === 'Active' ? 'text-emerald-400 font-bold' : 'text-textSecondary'}>Active</span>
-                    <span className={formData.status !== 'Active' ? 'text-textSecondary/70 font-bold' : 'text-textSecondary/40'}>Inactive</span>
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold text-textSecondary uppercase tracking-wider">States (Optional)</label>
+                  {!viewMode && (
+                    <div className="flex gap-2 mb-1.5">
+                      <input
+                        type="text"
+                        value={newStateName}
+                        onChange={(e) => setNewStateName(e.target.value)}
+                        placeholder="Enter state name (e.g. Goa)..."
+                        className="flex-1 rounded-xl border border-white/[0.04] bg-white/5 px-3 py-1.5 text-xs text-white outline-none transition focus:border-[#3B5BFF]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddState}
+                        className="rounded-xl bg-[#3B5BFF]/10 border border-[#3B5BFF]/20 px-3 py-1.5 text-xs font-bold text-[#3B5BFF] hover:bg-[#3B5BFF]/20 transition-all cursor-pointer"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  )}
+                  {/* Badges of selected states */}
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {(formData.statesList || []).map((state) => (
+                      <span
+                        key={state}
+                        onClick={() => handleRemoveState(state)}
+                        className={`inline-flex items-center gap-1 rounded bg-[#3B5BFF]/10 border border-[#3B5BFF]/20 px-1.5 py-0.5 text-[9px] font-semibold text-[#3B5BFF] ${
+                          viewMode ? 'cursor-default' : 'cursor-pointer hover:line-through hover:opacity-75 transition-all'
+                        }`}
+                      >
+                        {state} {!viewMode && <X size={9} />}
+                      </span>
+                    ))}
                   </div>
                 </div>
-              </div>
 
-              {/* Bottom Information Warning Box */}
-              <div className="flex items-start gap-2.5 rounded-xl border border-[#3B5BFF]/15 bg-[#3B5BFF]/5 p-2.5 text-[10px] text-textSecondary leading-snug">
-                <Info className="h-4 w-4 text-[#3B5BFF] shrink-0 mt-0.5" />
-                <p>This region will be available for mapping presences and therapies.</p>
+                <div>
+                  <Input
+                    label={<span>Active Presences</span>}
+                    type="number"
+                    value={formData.presences}
+                    onChange={(e) => setFormData({ ...formData, presences: Number(e.target.value) })}
+                    disabled={viewMode}
+                  />
+                </div>
+
+                <div>
+                  <Input
+                    label={<span>Distributors</span>}
+                    type="number"
+                    value={formData.distributors}
+                    onChange={(e) => setFormData({ ...formData, distributors: Number(e.target.value) })}
+                    disabled={viewMode}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1 border-t border-white/[0.04] pt-2 mt-1">
+                  <span className="text-[10px] font-semibold text-textSecondary uppercase tracking-wider">Status <span className="text-rose-500">*</span></span>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <button
+                      type="button"
+                      disabled={viewMode}
+                      onClick={() => setFormData({ ...formData, status: formData.status === 'Active' ? 'Inactive' : 'Active' })}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        formData.status === 'Active' ? 'bg-[#10B981]' : 'bg-white/10'
+                      } ${viewMode ? 'opacity-85 cursor-default' : ''}`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          formData.status === 'Active' ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                    <div className="flex flex-col text-[11px] leading-tight font-medium">
+                      <span className={formData.status === 'Active' ? 'text-emerald-400 font-bold' : 'text-textSecondary'}>Active</span>
+                      <span className={formData.status !== 'Active' ? 'text-textSecondary/70 font-bold' : 'text-textSecondary/40'}>Inactive</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/[0.04] shrink-0 mt-2">
-              <Button variant="secondary" onClick={() => setEditorOpen(false)} className="px-3.5 py-1.5 rounded-xl border border-white/[0.04] text-xs font-semibold">
-                Cancel
-              </Button>
-              <Button onClick={handleSave} className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#3B5BFF] to-[#5E4BFF] text-xs font-semibold">
-                {selectedRegion ? 'Save Changes' : 'Save Region'}
-              </Button>
+              {viewMode ? (
+                <Button
+                  onClick={() => setEditorOpen(false)}
+                  className="px-5 py-1.5 rounded-xl bg-[#3B5BFF] text-xs font-semibold text-white"
+                >
+                  Close
+                </Button>
+              ) : (
+                <>
+                  <Button variant="secondary" onClick={() => setEditorOpen(false)} className="px-3.5 py-1.5 rounded-xl border border-white/[0.04] text-xs font-semibold">
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSave} className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#3B5BFF] to-[#5E4BFF] text-xs font-semibold">
+                    {selectedRegion ? 'Save Changes' : 'Save Region'}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         )}

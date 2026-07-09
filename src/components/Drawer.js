@@ -36,8 +36,8 @@ const Drawer = ({ open, title, children, footer, onClose }) => {
               </button>
             </div>
 
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
+            {/* Scrollable Content - Added flex flex-col */}
+            <div className="flex-1 overflow-y-auto flex flex-col px-6 py-6 custom-scrollbar">
               {children}
             </div>
 
@@ -55,4 +55,3 @@ const Drawer = ({ open, title, children, footer, onClose }) => {
 };
 
 export default Drawer;
-

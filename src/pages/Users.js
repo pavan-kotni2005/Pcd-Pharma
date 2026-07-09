@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FiPlus, FiSearch, FiFilter, FiEdit, FiTrash2, FiUser } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiFilter, FiEdit, FiTrash2, FiEye } from 'react-icons/fi';
 import Drawer from '../components/Drawer';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -15,6 +15,7 @@ const roles = ['Admin', 'Manager', 'Supervisor', 'Editor'];
 const Users = () => {
   const { setActivePage, users, setUsers, showToast, logActivity } = useAppContext();
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [viewMode, setViewMode] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
@@ -46,6 +47,7 @@ const Users = () => {
   const openAdd = () => {
     setSelectedUser(null);
     setErrors({});
+    setViewMode(false);
     setFormData({ name: '', email: '', role: 'Admin', password: '', status: 'Active' });
     setOpenDrawer(true);
   };
@@ -53,50 +55,59 @@ const Users = () => {
   const openEdit = (user) => {
     setSelectedUser(user);
     setErrors({});
-    setFormData({ ...user, password: '' });
+    setViewMode(false);
+    setFormData({
+      name: user.name || '',
+      email: user.email || '',
+      role: user.role || 'Admin',
+      password: '',
+      status: user.status || 'Active'
+    });
+    setOpenDrawer(true);
+  };
+
+  const openView = (user) => {
+    setSelectedUser(user);
+    setErrors({});
+    setViewMode(true);
+    setFormData({
+      name: user.name || '',
+      email: user.email || '',
+      role: user.role || 'Admin',
+      password: '',
+      status: user.status || 'Active'
+    });
     setOpenDrawer(true);
   };
 
   const handleSave = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Full Name is required.';
-    
-    // Simple Email check
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email Address is required.';
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = 'Invalid Email format.';
-    }
-
-    if (!selectedUser && !formData.password.trim()) {
-      newErrors.password = 'Password is required for new accounts.';
-    }
+    if (!formData.email.trim()) newErrors.email = 'Email Address is required.';
+    if (!selectedUser && !formData.password.trim()) newErrors.password = 'Password is required.';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      showToast('Validation Error', 'Please correct the highlighted inputs.', 'failed');
+      showToast('Validation Error', 'Please complete all required fields.', 'failed');
       return;
     }
 
     if (selectedUser) {
-      // Retain old password if not modified
-      const updatedUser = {
-        ...selectedUser,
-        ...formData,
-        password: formData.password || selectedUser.password
-      };
-      setUsers((prev) => prev.map((item) => (item.id === selectedUser.id ? updatedUser : item)));
-      showToast('Account Updated', `${formData.name} settings saved successfully.`);
-      logActivity(`Updated user settings for ${formData.name}`, 'Users');
+      // Edit
+      setUsers((prev) =>
+        prev.map((item) => (item.id === selectedUser.id ? { ...item, ...formData, password: formData.password || item.password } : item))
+      );
+      showToast('User Updated', `${formData.name} settings updated.`);
+      logActivity(`Updated user profile ${formData.name}`, 'Users');
     } else {
+      // Add
       const newUser = {
         ...formData,
         id: `u${users.length + 1}`,
-        lastLogin: 'Just now'
+        lastLogin: 'Never'
       };
-      setUsers((prev) => [newUser, ...prev]);
-      showToast('Account Created', `A new profile was configured for ${formData.name}.`);
+      setUsers((prev) => [...prev, newUser]);
+      showToast('User Created', `Account for ${formData.name} has been created.`);
       logActivity(`Created user profile ${formData.name}`, 'Users');
     }
 
@@ -189,6 +200,15 @@ const Users = () => {
         data={pagedData}
         actions={(row) => (
           <div className="flex items-center justify-end gap-2">
+            {/* View Button */}
+            <button
+              onClick={() => openView(row)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/5 text-sm text-emerald-400 transition hover:bg-white/10"
+              title="View Details"
+            >
+              <FiEye size={14} />
+            </button>
+            {/* Edit Button */}
             <button
               onClick={() => openEdit(row)}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/5 text-sm text-white transition hover:bg-white/10"
@@ -196,6 +216,7 @@ const Users = () => {
             >
               <FiEdit size={14} />
             </button>
+            {/* Delete Button */}
             <button
               onClick={() => handleDeleteTrigger(row)}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-[#FF4D6D]/10 text-sm text-[#FF4D6D] transition hover:bg-[#FF4D6D]/15"
@@ -213,56 +234,79 @@ const Users = () => {
       {/* Form Drawer */}
       <Drawer
         open={openDrawer}
-        title={selectedUser ? 'Edit User Settings' : 'Create Admin Account'}
+        title={viewMode ? 'View User Settings' : selectedUser ? 'Edit User Settings' : 'Create Admin Account'}
         onClose={() => setOpenDrawer(false)}
         footer={
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <Button variant="secondary" onClick={() => setOpenDrawer(false)}>Cancel</Button>
-            <Button onClick={handleSave}>Save User</Button>
-          </div>
+          viewMode ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button onClick={() => setOpenDrawer(false)} className="bg-[#3B5BFF] text-white">Close</Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button variant="secondary" onClick={() => setOpenDrawer(false)}>Cancel</Button>
+              <Button onClick={handleSave}>Save User</Button>
+            </div>
+          )
         }
       >
-        <div className="grid gap-5">
-          <Input
-            label="Full Name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            error={errors.name}
-          />
-          <Input
-            label="Email Address"
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            error={errors.email}
-          />
-          <div>
-            <label className="mb-2 block text-xs uppercase tracking-[0.18em] text-textSecondary font-semibold">User Role</label>
-            <select
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="w-full rounded-2xl border border-white/8 bg-white/5 px-4 py-3.5 text-sm text-white outline-none transition focus:border-[#3B5BFF] focus:ring-2 focus:ring-[#3B5BFF]/20"
-            >
-              {roles.map((role) => (
-                <option key={role} value={role} className="bg-sidebar">
-                  {role}
-                </option>
-              ))}
-            </select>
-          </div>
-          <Input
-            label={selectedUser ? 'New Password (leave blank to keep current)' : 'Account Password'}
-            type="password"
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            error={errors.password}
-          />
-          <div>
-            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-textSecondary font-semibold">Account Status</span>
-            <StatusToggle
-              checked={formData.status === 'Active'}
-              onChange={(checked) => setFormData({ ...formData, status: checked ? 'Active' : 'Offline' })}
-            />
+        <div className="flex-1 flex flex-col justify-between">
+          <div className="grid gap-5">
+            {/* Stacked Full Name and Email vertically */}
+            <div>
+              <Input
+                label="Full Name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                error={errors.name}
+                disabled={viewMode}
+              />
+            </div>
+            <div>
+              <Input
+                label="Email Address"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                error={errors.email}
+                disabled={viewMode}
+              />
+            </div>
+
+            {/* Stacked User Role and Status vertically */}
+            <div>
+              <label className="mb-2 block text-xs uppercase tracking-[0.18em] text-textSecondary font-semibold">User Role</label>
+              <select
+                value={formData.role}
+                disabled={viewMode}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                className="w-full rounded-2xl border border-white/8 bg-white/5 px-4 py-3.5 text-sm text-white outline-none transition focus:border-[#3B5BFF] focus:ring-2 focus:ring-[#3B5BFF]/20 disabled:opacity-75 disabled:cursor-not-allowed"
+              >
+                {roles.map((role) => (
+                  <option key={role} value={role} className="bg-sidebar">
+                    {role}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-textSecondary font-semibold">Account Status</span>
+              <StatusToggle
+                checked={formData.status === 'Active'}
+                disabled={viewMode}
+                onChange={(checked) => !viewMode && setFormData({ ...formData, status: checked ? 'Active' : 'Offline' })}
+              />
+            </div>
+
+            {!viewMode && (
+              <Input
+                label={selectedUser ? 'New Password (leave blank to keep current)' : 'Account Password'}
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                error={errors.password}
+              />
+            )}
           </div>
         </div>
       </Drawer>
